@@ -1,0 +1,82 @@
+Obesity Prevalence
+==================
+```{r warning=FALSE, message=F}
+library(rvest)
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(fiftystater)
+```
+
+# Download the data from wikipredia:
+```{r warning=FALSE}
+obesity <- read_html("https://en.wikipedia.org/wiki/Obesity_in_the_United_States")
+obesity <- obesity %>%
+  html_nodes(xpath = "//table") %>%
+  .[[2]] %>%
+  html_table(fill = T)
+head(obesity, 3)
+```
+
+# Cleaning the data: remove the % and convert chr into numeric variables
+```{r warning=FALSE}
+str(obesity)
+for (i in 2:5) {
+  obesity[, i] <- gsub("%.*", "", obesity[, i])
+  obesity[, i] <- as.numeric(obesity[, i])
+}
+```
+
+# Check the data again
+```{r}
+glimpse(obesity)
+```
+
+# Rename the columns
+```{r}
+#names(obesity) <- make.names(names(obesity))
+names(obesity)[c(1, 2, 3, 4, 5)] <- c("region", "obese_adul_2000", "obese_adul_16", 
+                                   "overweight_obese_adul_2000",      "obese_child_adole2000")
+#names(obesity)[1] <- "region"
+obesity$region <- tolower(obesity$region)
+```
+
+# Plot the data: the prevalence of obesity for adults in 2000
+```{r}
+ggplot(obesity, aes(map_id = region)) + 
+  # map points to the fifty_states shape data
+  geom_map(aes(fill = obese_adul_2000), map = fifty_states) + 
+  expand_limits(x = fifty_states$long, y = fifty_states$lat) +
+  scale_fill_gradient(name = "Percent", low = "#feceda", high = "#c81f49", guide = "colorbar", na.value = "black", breaks = pretty_breaks(n = 5)) +
+  coord_map() +
+  labs(x = "", y = "") +
+  theme(legend.position = "bottom") 
+  labs(title ="Prevalence of Obesity for Adults") 
+```
+
+# Plot the data: the prevalence of obesity for adults in 2016
+```{r}
+ggplot(obesity[-3, ], aes(map_id = region)) + 
+  # map points to the fifty_states shape data
+  geom_map(aes(fill = obese_adul_16), map = fifty_states) + 
+  expand_limits(x = fifty_states$long, y = fifty_states$lat) +
+  scale_fill_gradient(name = "Percent", low = "#feceda", high = "#c81f49", guide = "colorbar", na.value = "black", breaks = pretty_breaks(n = 5)) +
+  coord_map() +
+  labs(x = "", y = "") +
+  theme(legend.position = "bottom") 
+  labs(title ="Prevalence of Obesity for Adults")
+```
+
+# PLot the prevalence of obesity for children
+```{r}
+ggplot(obesity[-3, ], aes(map_id = region)) + 
+  # map points to the fifty_states shape data
+  geom_map(aes(fill = obese_child_adole2000), map = fifty_states) + 
+  expand_limits(x = fifty_states$long, y = fifty_states$lat) +
+  scale_fill_gradient(name = "Percent", low = "#feceda", high = "#c81f49", guide = "colorbar", na.value = "black", breaks = pretty_breaks(n = 5)) +
+  coord_map() +
+  labs(x = "", y = "") +
+  theme(legend.position = "bottom") + 
+  ggtitle("Prevalence of Obesity for Children") + coord_map()
+```
+        
